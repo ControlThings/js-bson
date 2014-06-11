@@ -129,6 +129,21 @@ exports['Should Correctly create ObjectID and do deep equals'] = function(test) 
 /**
  * @ignore
  */
+exports['Should Correctly convert ObjectID to itself'] = function(test) {
+  var myObject, newObject;
+  var selfConvertion = (function() {
+    myObject = new ObjectID();
+    newObject = ObjectID(myObject);
+  });
+
+  test.doesNotThrow(selfConvertion);
+  test.equal(myObject, newObject);
+  test.done();
+}
+
+/**
+ * @ignore
+ */
 exports['Should Correctly get BSON types from require'] = function(test) {
   var _mongodb = require('../../lib/bson');
   test.ok(_mongodb.ObjectID === ObjectID);
@@ -1660,6 +1675,21 @@ exports['ObjectID should have a correct cached representation of the hexString']
   test.equal(__id, a.toHexString());
   ObjectId.cacheHexString = false;
 
+  test.done();
+}
+
+/**
+ * @ignore
+ */
+exports['Should fail to create ObjectID due to illegal hex code'] = function(test) {
+  try {
+    new ObjectID("zzzzzzzzzzzzzzzzzzzzzzzz");
+    test.ok(false);
+  } catch (err) {
+  }
+
+  test.equal(false, ObjectID.isValid("zzzzzzzzzzzzzzzzzzzzzzzz"));
+  test.equal(true, ObjectID.isValid("000000000000000000000000"));
   test.done();
 }
 
