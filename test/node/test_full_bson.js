@@ -1,25 +1,27 @@
+"use strict"
+
 var sys = require('util'),
+  BSON = require('../..'),
   fs = require('fs'),
-  BSON = require('../../ext').BSON,
   Buffer = require('buffer').Buffer,
-  BSONJS = require('../../lib/bson/bson').BSON,
-  BinaryParser = require('../../lib/bson/binary_parser').BinaryParser,
+  BinaryParser = require('../binary_parser').BinaryParser,
   Long = require('../../lib/bson/long').Long,
-  ObjectID = require('../../lib/bson/bson').ObjectID,
-  Binary = require('../../lib/bson/bson').Binary,
-  Code = require('../../lib/bson/bson').Code,
-  DBRef = require('../../lib/bson/bson').DBRef,
-  Symbol = require('../../lib/bson/bson').Symbol,
-  Double = require('../../lib/bson/bson').Double,
-  MaxKey = require('../../lib/bson/bson').MaxKey,
-  MinKey = require('../../lib/bson/bson').MinKey,
-  Timestamp = require('../../lib/bson/bson').Timestamp,
-  gleak = require('../../tools/gleak'),
+  ObjectID = BSON.ObjectID,
+  Binary = BSON.Binary,
+  Code = BSON.Code,
+  DBRef = BSON.DBRef,
+  BSONRegExp = BSON.BSONRegExp,
+  Symbol = BSON.Symbol,
+  Double = BSON.Double,
+  MaxKey = BSON.MaxKey,
+  MinKey = BSON.MinKey,
+  Timestamp = BSON.Timestamp,
   assert = require('assert');
 
+var createBSON = require('../utils');
+
 // Parsers
-var bsonC = new BSON([Long, ObjectID, Binary, Code, DBRef, Symbol, Double, Timestamp, MaxKey, MinKey]);
-var bsonJS = new BSONJS([Long, ObjectID, Binary, Code, DBRef, Symbol, Double, Timestamp, MaxKey, MinKey]);
+var bson = createBSON();
 
 /**
  * Retrieve the server information for the current
@@ -52,7 +54,7 @@ exports['Should Correctly Deserialize object'] = function(test) {
     serialized_data = serialized_data + BinaryParser.fromByte(bytes[i]);
   }
 
-  var object = bsonC.deserialize(serialized_data);
+  var object = bson.deserialize(new Buffer(serialized_data, 'binary'));
   assert.equal("a_1", object.name);
   assert.equal(false, object.unique);
   assert.equal(1, object.key.a);
@@ -70,7 +72,7 @@ exports['Should Correctly Deserialize object with all types'] = function(test) {
     serialized_data = serialized_data + BinaryParser.fromByte(bytes[i]);
   }
 
-  var object = bsonJS.deserialize(new Buffer(serialized_data, 'binary'));
+  var object = bson.deserialize(new Buffer(serialized_data, 'binary'));
   assert.equal("hello", object.string);
   assert.deepEqual([1, 2, 3], object.array);
   assert.equal(1, object.hash.a);
@@ -93,8 +95,8 @@ exports['Should Correctly Deserialize object with all types'] = function(test) {
  */
 exports['Should Serialize and Deserialize String'] = function(test) {
   var test_string = {hello: 'world'}
-  var serialized_data = bsonC.serialize(test_string)
-  assert.deepEqual(test_string, bsonC.deserialize(serialized_data));
+  var serialized_data = bson.serialize(test_string)
+  assert.deepEqual(test_string, bson.deserialize(serialized_data));
   test.done();
 }
 
@@ -103,8 +105,8 @@ exports['Should Serialize and Deserialize String'] = function(test) {
  */
 exports['Should Correctly Serialize and Deserialize Integer'] = function(test) {
   var test_number = {doc: 5}
-  var serialized_data = bsonC.serialize(test_number)
-  assert.deepEqual(test_number, bsonC.deserialize(serialized_data));
+  var serialized_data = bson.serialize(test_number)
+  assert.deepEqual(test_number, bson.deserialize(serialized_data));
   test.done();
 }
 
@@ -113,8 +115,8 @@ exports['Should Correctly Serialize and Deserialize Integer'] = function(test) {
  */
 exports['Should Correctly Serialize and Deserialize null value'] = function(test) {
   var test_null = {doc:null}
-  var serialized_data = bsonC.serialize(test_null)
-  var object = bsonC.deserialize(serialized_data);
+  var serialized_data = bson.serialize(test_null)
+  var object = bson.deserialize(serialized_data);
   assert.deepEqual(test_null, object);
   test.done();
 }
@@ -124,8 +126,8 @@ exports['Should Correctly Serialize and Deserialize null value'] = function(test
  */
 exports['Should Correctly Serialize and Deserialize undefined value'] = function(test) {
   var test_undefined = {doc:undefined}
-  var serialized_data = bsonC.serialize(test_undefined)
-  var object = bsonJS.deserialize(new Buffer(serialized_data, 'binary'));
+  var serialized_data = bson.serialize(test_undefined)
+  var object = bson.deserialize(new Buffer(serialized_data, 'binary'));
   assert.equal(null, object.doc)
   test.done();
 }
@@ -135,8 +137,8 @@ exports['Should Correctly Serialize and Deserialize undefined value'] = function
  */
 exports['Should Correctly Serialize and Deserialize Number 3'] = function(test) {
   var test_number = {doc: 5.5}
-  var serialized_data = bsonC.serialize(test_number)
-  assert.deepEqual(test_number, bsonC.deserialize(serialized_data));
+  var serialized_data = bson.serialize(test_number)
+  assert.deepEqual(test_number, bson.deserialize(serialized_data));
   test.done();
 }
 
@@ -145,20 +147,20 @@ exports['Should Correctly Serialize and Deserialize Number 3'] = function(test) 
  */
 exports['Should Correctly Serialize and Deserialize Integer'] = function(test) {
   var test_int = {doc: 42}
-  var serialized_data = bsonC.serialize(test_int)
-  assert.deepEqual(test_int, bsonC.deserialize(serialized_data));
+  var serialized_data = bson.serialize(test_int)
+  assert.deepEqual(test_int, bson.deserialize(serialized_data));
 
   test_int = {doc: -5600}
-  serialized_data = bsonC.serialize(test_int)
-  assert.deepEqual(test_int, bsonC.deserialize(serialized_data));
+  serialized_data = bson.serialize(test_int)
+  assert.deepEqual(test_int, bson.deserialize(serialized_data));
 
   test_int = {doc: 2147483647}
-  serialized_data = bsonC.serialize(test_int)
-  assert.deepEqual(test_int, bsonC.deserialize(serialized_data));
+  serialized_data = bson.serialize(test_int)
+  assert.deepEqual(test_int, bson.deserialize(serialized_data));
 
   test_int = {doc: -2147483648}
-  serialized_data = bsonC.serialize(test_int)
-  assert.deepEqual(test_int, bsonC.deserialize(serialized_data));
+  serialized_data = bson.serialize(test_int)
+  assert.deepEqual(test_int, bson.deserialize(serialized_data));
   test.done();
 }
 
@@ -167,8 +169,8 @@ exports['Should Correctly Serialize and Deserialize Integer'] = function(test) {
  */
 exports['Should Correctly Serialize and Deserialize Object'] = function(test) {
   var doc = {doc: {age: 42, name: 'Spongebob', shoe_size: 9.5}}
-  var serialized_data = bsonC.serialize(doc)
-  assert.deepEqual(doc, bsonC.deserialize(serialized_data));
+  var serialized_data = bson.serialize(doc)
+  assert.deepEqual(doc, bson.deserialize(serialized_data));
   test.done();
 }
 
@@ -177,8 +179,8 @@ exports['Should Correctly Serialize and Deserialize Object'] = function(test) {
  */
 exports['Should Correctly Serialize and Deserialize Array'] = function(test) {
   var doc = {doc: [1, 2, 'a', 'b']}
-  var serialized_data = bsonC.serialize(doc)
-  assert.deepEqual(doc, bsonC.deserialize(serialized_data));
+  var serialized_data = bson.serialize(doc)
+  assert.deepEqual(doc, bson.deserialize(serialized_data));
   test.done();
 }
 
@@ -187,8 +189,8 @@ exports['Should Correctly Serialize and Deserialize Array'] = function(test) {
  */
 exports['Should Correctly Serialize and Deserialize Array with added on functions'] = function(test) {
   var doc = {doc: [1, 2, 'a', 'b']}
-  var serialized_data = bsonC.serialize(doc)
-  assert.deepEqual(doc, bsonC.deserialize(serialized_data));
+  var serialized_data = bson.serialize(doc)
+  assert.deepEqual(doc, bson.deserialize(serialized_data));
   test.done();
 }
 
@@ -197,8 +199,8 @@ exports['Should Correctly Serialize and Deserialize Array with added on function
  */
 exports['Should Correctly Serialize and Deserialize A Boolean'] = function(test) {
   var doc = {doc: true}
-  var serialized_data = bsonC.serialize(doc)
-  assert.deepEqual(doc, bsonC.deserialize(serialized_data));
+  var serialized_data = bson.serialize(doc)
+  assert.deepEqual(doc, bson.deserialize(serialized_data));
   test.done();
 }
 
@@ -215,8 +217,8 @@ exports['Should Correctly Serialize and Deserialize a Date'] = function(test) {
   date.setUTCMinutes(0)
   date.setUTCSeconds(30)
   var doc = {doc: date}
-  var serialized_data = bsonC.serialize(doc)
-  assert.deepEqual(doc, bsonC.deserialize(serialized_data));
+  var serialized_data = bson.serialize(doc)
+  assert.deepEqual(doc, bson.deserialize(serialized_data));
   test.done();
 }
 
@@ -225,8 +227,8 @@ exports['Should Correctly Serialize and Deserialize a Date'] = function(test) {
  */
 exports['Should Correctly Serialize and Deserialize Oid'] = function(test) {
   var doc = {doc: new ObjectID()}
-  var serialized_data = bsonC.serialize(doc)
-  assert.deepEqual(doc.doc.toHexString(), bsonC.deserialize(serialized_data).doc.toHexString())
+  var serialized_data = bson.serialize(doc)
+  assert.deepEqual(doc.doc.toHexString(), bson.deserialize(serialized_data).doc.toHexString())
   test.done();
 }
 
@@ -235,9 +237,21 @@ exports['Should Correctly Serialize and Deserialize Oid'] = function(test) {
  */
 exports['Should Correctly Serialize and Deserialize Buffer'] = function(test) {
   var doc = {doc: new Buffer("123451234512345")}
-  var serialized_data = bsonC.serialize(doc)
+  var serialized_data = bson.serialize(doc)
 
-  assert.equal("123451234512345", bsonC.deserialize(serialized_data).doc.buffer.toString('ascii'));
+  assert.equal("123451234512345", bson.deserialize(serialized_data).doc.buffer.toString('ascii'));
+  test.done();
+}
+
+/**
+ * @ignore
+ */
+exports['Should Correctly Serialize and Deserialize Buffer with promoteBuffers option'] = function(test) {
+  var doc = {doc: new Buffer("123451234512345")}
+  var serialized_data = bson.serialize(doc)
+
+  var options = { promoteBuffers: true };
+  assert.equal("123451234512345", bson.deserialize(serialized_data, options).doc.toString('ascii'));
   test.done();
 }
 
@@ -246,8 +260,8 @@ exports['Should Correctly Serialize and Deserialize Buffer'] = function(test) {
  */
 exports['Should Correctly encode Empty Hash'] = function(test) {
   var test_code = {}
-  var serialized_data = bsonC.serialize(test_code)
-  assert.deepEqual(test_code, bsonC.deserialize(serialized_data));
+  var serialized_data = bson.serialize(test_code)
+  assert.deepEqual(test_code, bson.deserialize(serialized_data));
   test.done();
 }
 
@@ -256,8 +270,8 @@ exports['Should Correctly encode Empty Hash'] = function(test) {
  */
 exports['Should Correctly Serialize and Deserialize Ordered Hash'] = function(test) {
   var doc = {doc: {b:1, a:2, c:3, d:4}}
-  var serialized_data = bsonC.serialize(doc)
-  var decoded_hash = bsonC.deserialize(serialized_data).doc
+  var serialized_data = bson.serialize(doc)
+  var decoded_hash = bson.deserialize(serialized_data).doc
   var keys = []
   for(var name in decoded_hash) keys.push(name)
   assert.deepEqual(['b', 'a', 'c', 'd'], keys)
@@ -269,8 +283,8 @@ exports['Should Correctly Serialize and Deserialize Ordered Hash'] = function(te
  */
 exports['Should Correctly Serialize and Deserialize Regular Expression'] = function(test) {
   var doc = {doc: /foobar/mi}
-  var serialized_data = bsonC.serialize(doc)
-  var doc2 = bsonC.deserialize(serialized_data);
+  var serialized_data = bson.serialize(doc)
+  var doc2 = bson.deserialize(serialized_data);
   assert.equal(doc.doc.toString(), doc2.doc.toString())
   test.done();
 }
@@ -285,8 +299,8 @@ exports['Should Correctly Serialize and Deserialize a Binary object'] = function
     bin.put(string.charAt(index))
   }
   var doc = {doc: bin}
-  var serialized_data = bsonC.serialize(doc)
-  var deserialized_data = bsonC.deserialize(serialized_data);
+  var serialized_data = bson.serialize(doc)
+  var deserialized_data = bson.deserialize(serialized_data);
   assert.equal(doc.doc.value(), deserialized_data.doc.value())
   test.done();
 }
@@ -299,9 +313,20 @@ exports['Should Correctly Serialize and Deserialize a big Binary object'] = func
   var bin = new Binary()
   bin.write(data)
   var doc = {doc: bin}
-  var serialized_data = bsonC.serialize(doc)
-  var deserialized_data = bsonC.deserialize(serialized_data);
+  var serialized_data = bson.serialize(doc)
+  var deserialized_data = bson.deserialize(serialized_data);
   assert.equal(doc.doc.value(), deserialized_data.doc.value())
+  test.done();
+}
+
+exports['Should Correctly Deserialize bson file from mongodump'] = function(test) {
+  var data = fs.readFileSync("test/node/data/test.bson", { encoding: null });
+  var docs = []
+  var bsonIndex = 0
+  while (bsonIndex < data.length)
+    bsonIndex = bson.deserializeStream(data,bsonIndex,1,docs,docs.length,{isArray:true})
+
+  assert.equal(docs.length, 1)
   test.done();
 }
 
@@ -319,17 +344,21 @@ exports['Should Correctly fail due to attempting serialization of illegal key va
     v[i] = 1;
   v[0] = 0x0A;
   var doc = {};
-  doc[k.toString()] = v.toString();  
+  doc[k.toString()] = v.toString();
 
   // Should throw due to null character
   try {
-    bsonJS.serialize(doc, true, true, false);
+    bson.serialize(doc, {
+      checkKeys: true
+    });
     test.ok(false);
   } catch (err) {
   }
 
   try {
-    bsonC.serialize(doc, true, true, false);
+    bson.serialize(doc, {
+      checkKeys: true
+    });
     test.ok(false);
   } catch (err) {
   }
@@ -337,11 +366,30 @@ exports['Should Correctly fail due to attempting serialization of illegal key va
   test.done();
 }
 
-/**
- * @ignore
- */
-exports.noGlobalsLeaked = function(test) {
-  var leaks = gleak.detectNew();
-  test.equal(0, leaks.length, "global var leak detected: " + leaks.join(', '));
+exports['Should correctly fail to serialize regexp with null bytes'] = function(test) {
+  var doc = {};
+  doc.test = new RegExp('a\0b');
+
+  try {
+    bson.serialize(doc, {
+      checkKeys: true
+    });
+    test.ok(false);
+  } catch(err) {}
+
   test.done();
-}
+};
+
+exports['Should correctly fail to serialize BSONRegExp with null bytes'] = function(test) {
+  var doc = {};
+  doc.test = new BSONRegExp('a\0b');
+
+  try {
+    bson.serialize(doc, {
+      checkKeys: true
+    });
+    test.ok(false);
+  } catch(err) {}
+
+  test.done();
+};
