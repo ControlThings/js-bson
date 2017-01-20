@@ -1,3 +1,11 @@
+# Fork disclaimer
+
+This is a fork with breaking changes! 
+
+This is a fork of the mongodb js-bson project located at https://github.com/mongodb/js-bson). The modifications are simple, but breaks compatibility with the original software.
+
+See the `BSON-buffer changes` section for more details.
+
 # BSON parser
 
 If you don't yet know what BSON actually is, read [the spec](http://bsonspec.org).
@@ -139,3 +147,37 @@ The BSON deserializeStream method takes a node.js Buffer, startIndex and allow m
     * @param {Object} [options.fieldsAsRaw=null] allow to specify if there what fields we wish to return as unserialized raw buffer.
     * @param {Object} [options.bsonRegExp=false] return BSON regular expressions as BSONRegExp instances.
     * @return {Object} returns the deserialized Javascript Object.
+
+
+## BSON-buffer changes
+
+The purpose of this fork is to introduce direct conversion of BSON type Binary to Buffer and vice versa. In the browser it uses Uint8Array instead of Buffer, but the general idea is the same. This only works reliably if there is only need for a single subtype.
+
+Example: 
+
+
+```js
+var in = { payload: new Buffer('00FF00FF00FF', 'hex') }
+
+var ser = BSON.serialize(in);
+
+var out = BSON.deserialize(ser);
+```
+
+Value of `out` in this fork implementation
+
+```js
+{ payload: Buffer } // '00FF00FF00FF'
+```
+
+Value of `out` in original implementation
+
+```js
+{ payload: {
+  _bsonType: 'Binary', 
+  sub_type: BSON_BINARY_SUBTYPE_DEFAULT, 
+  buffer: Buffer } } // '00FF00FF00FF'
+```
+
+
+
