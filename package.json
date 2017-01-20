@@ -1,5 +1,5 @@
 {
-  "name": "wish-bson",
+  "name": "bson-buffer",
   "description": "A bson parser for node.js and the browser",
   "keywords": [
     "mongodb",
@@ -14,8 +14,8 @@
   ],
   "version": "1.0.2",
   "author": "Christian Amor Kvalheim <christkv@gmail.com>",
-  "contributors": [],
-  "repository": "mongodb/js-bson",
+  "contributors": ["André Kaustell <andre.kaustell@controlthings.fi>"],
+  "repository": "akaustel/js-bson",
   "bugs": {
     "mail": "node-mongodb-native@googlegroups.com",
     "url": "https://github.com/mongodb/js-bson/issues"
